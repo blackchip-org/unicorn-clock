@@ -1,4 +1,6 @@
+
 import sys
+import time
 
 def render_bitmap(dmd, gfx, color, at=(0, 0)):
     for y, row in enumerate(gfx):
@@ -36,7 +38,8 @@ class Animator:
     def add(self, callback, duration, delay=0):
         self.animations += [Animation(callback, duration, delay)]
 
-    def service(self, now):
+    def service(self, now=None):
+        now = time.time() if now is None else now
         for anim in self.animations:
             anim.service(now)
         self.animations = [x for x in self.animations if now < x.end_time]
@@ -65,7 +68,7 @@ class Fade:
 
 class SlideColumnIn:
 
-    def __init__(self, dmd, duration, column, pixels):
+    def __init__(self, dmd, column, pixels):
         self.dmd = dmd
         self.column = column
         self.pixels = pixels
@@ -77,6 +80,56 @@ class SlideColumnIn:
             if index >= 0 and index < len(self.pixels):
                 pix = self.pixels[index]
                 self.dmd.set_pixel((self.column, i), pix)
+
+
+class Slide:
+
+    def __init__(self, dmd, x=0, y=0, x_step=0, y_step=0, width=None, height=None):
+        self.dmd = dmd
+        self.x = x
+        self.y = y
+        self.x_step = x_step
+        self.y_step = y_step
+        self.width = self.dmd.width if width is None else width
+        self.height = self.dmd.height if height is None else height
+        self.old_pixels = {}
+        self.new_pixels = {}
+        for px in range(self.width):
+            for py in range(self.height):
+                self.old_pixels[(px, py)] = self.dmd.get_pixel((px + self.x, py + self.y))
+
+    def update(self, progress):
+        for px in range(self.width):
+            for py in range(self.height):
+                self.new_pixels[(px, py)] = self.dmd.get_pixel((px + self.x, py + self.y))
+        self.show_old(progress)
+        self.show_new(progress)
+
+    def show_old(self, progress):
+        x_offset = int(self.width * progress * self.x_step)
+        y_offset = int(self.height * progress * self.y_step)
+        for x in range(self.width):
+            for y in range(self.height):
+                self.show_pixel(self.old_pixels, x, y, x_offset, y_offset)
+
+    def show_new(self, progress):
+        x_offset = int(self.width * progress * self.x_step) - (self.width * self.x_step)
+        y_offset = int(self.height * progress * self.y_step) - (self.height * self.y_step)
+        for x in range(self.width):
+            for y in range(self.height):
+                self.show_pixel(self.new_pixels, x, y, x_offset, y_offset)
+
+    def show_pixel(self, source, x, y, x_offset, y_offset):
+        x_source = x + x_offset
+        if x_source < 0 or x_source >= self.width:
+            return
+        y_source = y + y_offset
+        if y_source < 0 or y_source >= self.height:
+            return
+        x_target = x + self.x
+        y_target = y + self.y
+        c = source[(x_source, y_source)]
+        self.dmd.set_pixel((x_target, y_target), c)
 
 chars64 = {
     'd': [

@@ -1,22 +1,15 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import time
-from unicorn import UnicornHAT
 from datetime import datetime
 from gpiozero import Button
 import clock
 import menu
 
-class Hardware:
-
-    def __init__(self):
-        bounce_time = 0.02
-        self.dmd = UnicornHAT()
-        self.enter_button = Button(6, bounce_time=bounce_time)
-        self.up_button = Button(13, bounce_time=bounce_time)
-        self.down_button = Button(16, bounce_time=bounce_time)
-        self.exit_button = Button(26, bounce_time=bounce_time)
-
+try:
+    from hardware import Hardware
+except Exception:
+    from virtual import Hardware
 
 class App:
 
@@ -35,7 +28,7 @@ class App:
             'clock-demo': clock.DemoMode(self.dmd),
             'menu': menu.Mode(self.dmd),
         }
-        self.mode = 'clock-demo'
+        self.mode = 'clock'
         self.dmd.brightness = 0.5
         self.dmd.rotation = 180
         self.modes[self.mode].start()
@@ -60,6 +53,7 @@ class App:
             self.modes[next_mode].start()
             self.mode = next_mode
         self.dmd.show()
+        self.hw.service()
 
     def run(self):
         interval = 1/60
