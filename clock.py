@@ -128,6 +128,7 @@ class Numeric:
         return index
 
     def update(self, now):
+        self.dmd.clear()
         for x in range(7):
             for y in range(7):
                 self.dmd.set_pixel((x, y), (0x00, 0x00, 0x60))
@@ -162,8 +163,7 @@ class Mode:
         self.animator = gfx.Animator()
 
     def start(self):
-        slide_in = gfx.Slide(self.dmd, y_step=1)
-        # self.animator.add(slide_in.update, 0.1)
+        #slide_in = gfx.Slide(self.dmd, y_step=1)
         self.clock.update(datetime.now())
 
     def stop(self):
@@ -174,28 +174,6 @@ class Mode:
         while len(event_queue) > 0:
             event = event_queue.pop()
             if event == 'enter':
-                return 'menu'
+                return {'mode': 'menu'}
         self.clock.next(datetime.now())
         self.animator.service()
-        return 'clock'
-
-class DemoMode:
-
-    def __init__(self, dmd):
-        self.clock = XY(dmd)
-        self.demo_time = datetime(2019, 1, 1, 20, 30)
-
-    def start(self):
-        self.clock.update(self.demo_time)
-
-    def stop(self):
-        self.clock.stop()
-
-    def service(self, event_queue):
-        while len(event_queue) > 0:
-            event = event_queue.pop()
-            if event == 'enter':
-                return 'menu'
-        self.demo_time += self.clock.demo_time_step
-        self.clock.next(self.demo_time)
-        return 'clock-demo'

@@ -5,6 +5,7 @@ from datetime import datetime
 from gpiozero import Button
 import clock
 import menu
+import status 
 
 try:
     from hardware import Hardware
@@ -25,8 +26,9 @@ class App:
         self.dmd = self.hw.dmd
         self.modes = {
             'clock': clock.Mode(self.dmd),
-            'clock-demo': clock.DemoMode(self.dmd),
             'menu': menu.Mode(self.dmd),
+            'clock-select': menu.ClockSelectMode(self.dmd),
+            'status': status.Mode(self.dmd),
         }
         self.mode = 'clock'
         self.dmd.brightness = 0.5
@@ -48,10 +50,13 @@ class App:
 
     def loop(self):
         next_mode = self.modes[self.mode].service(self.event_queue)
-        if next_mode != self.mode:
+        if next_mode is not None:
+            next_mode_name = next_mode['mode']
             self.modes[self.mode].stop()
-            self.modes[next_mode].start()
-            self.mode = next_mode
+            kwargs = dict(next_mode) 
+            del kwargs['mode']
+            self.modes[next_mode_name].start(**kwargs)
+            self.mode = next_mode_name
         self.dmd.show()
         self.hw.service()
 
